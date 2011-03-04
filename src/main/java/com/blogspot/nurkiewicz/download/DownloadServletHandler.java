@@ -37,7 +37,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		try {
 			response.setContentLength((int) file.length());
 			sendFile(request, response, input);
-			log.debug("Done3");
+			log.debug("Done");
 		} catch (InterruptedException e) {
 			log.error("Download interrupted", e);
 		} finally {
