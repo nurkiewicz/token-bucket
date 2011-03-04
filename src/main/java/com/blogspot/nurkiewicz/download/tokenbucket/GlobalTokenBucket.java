@@ -2,8 +2,6 @@ package com.blogspot.nurkiewicz.download.tokenbucket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -17,8 +15,7 @@ import java.util.concurrent.TimeUnit;
  * @author Tomasz Nurkiewicz
  * @since 03.03.11, 00:02
  */
-@Service
-@Primary
+//@Service
 public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalTokenBucket.class);

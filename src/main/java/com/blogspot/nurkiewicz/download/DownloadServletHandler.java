@@ -42,6 +42,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 			log.error("Download interrupted", e);
 		} finally {
 			input.close();
+			tokenBucket.completed(request);
 		}
 
 	}
