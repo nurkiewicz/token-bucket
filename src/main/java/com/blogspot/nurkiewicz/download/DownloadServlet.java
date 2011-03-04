@@ -1,4 +1,4 @@
-package com.blogspot.nurkiewicz.tokenbucket;
+package com.blogspot.nurkiewicz.download;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
