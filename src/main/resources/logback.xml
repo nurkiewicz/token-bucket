@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+	<contextName>tokenbucket</contextName>
+	<jmxConfigurator />
+
+	<logger name="org" level="INFO"/>
+
+	<root level="ALL">
+		<appender class="ch.qos.logback.core.ConsoleAppender">
+			<encoder>
+				<pattern>%d{ISO8601} | %-5level | %thread | %logger{1} | %m%n</pattern>
+			</encoder>
+		</appender>
+	</root>
+</configuration>
