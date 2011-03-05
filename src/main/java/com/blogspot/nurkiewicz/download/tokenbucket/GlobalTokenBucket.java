@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.servlet.http.HttpServletRequest;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
@@ -51,17 +50,13 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 	}
 
 	@Override
-	public void takeBlocking(HttpServletRequest req, int howMany) throws InterruptedException {
+	public void takeBlocking(int howMany) throws InterruptedException {
 		count.acquire(howMany);
 	}
 
 	@Override
-	public boolean tryTake(HttpServletRequest req, int howMany) {
+	public boolean tryTake(int howMany) {
 		return count.tryAcquire(howMany);
-	}
-
-	@Override
-	public void completed(HttpServletRequest req) {
 	}
 
 	@ManagedAttribute

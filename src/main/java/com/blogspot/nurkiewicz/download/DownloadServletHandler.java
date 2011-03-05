@@ -50,7 +50,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		byte[] buffer = new byte[TokenBucket.TOKEN_PERMIT_SIZE];
 		final ServletOutputStream outputStream = response.getOutputStream();
 		for (int count = input.read(buffer); count > 0; count = input.read(buffer)) {
-			tokenBucket.takeBlocking(request);
+			tokenBucket.takeBlocking();
 			outputStream.write(buffer, 0, count);
 		}
 	}

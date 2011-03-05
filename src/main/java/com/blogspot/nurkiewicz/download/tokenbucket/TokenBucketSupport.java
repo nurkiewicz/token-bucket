@@ -1,7 +1,5 @@
 package com.blogspot.nurkiewicz.download.tokenbucket;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * @author Tomasz Nurkiewicz
  * @since 03.03.11, 19:41
@@ -9,13 +7,13 @@ import javax.servlet.http.HttpServletRequest;
 public abstract class TokenBucketSupport implements TokenBucket {
 
 	@Override
-	public void takeBlocking(HttpServletRequest req) throws InterruptedException {
-		takeBlocking(req, 1);
+	public void takeBlocking() throws InterruptedException {
+		takeBlocking(1);
 	}
 
 	@Override
-	public boolean tryTake(HttpServletRequest req) {
-		return tryTake(req, 1);
+	public boolean tryTake() {
+		return tryTake(1);
 	}
 
 }
