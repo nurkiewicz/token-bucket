@@ -4,6 +4,7 @@
 	<jmxConfigurator />
 
 	<logger name="org" level="INFO"/>
+	<logger name="com.blogspot.nurkiewicz.download.tokenbucket.PerRequestTokenBucket" level="INFO"/>
 
 	<root level="ALL">
 		<appender class="ch.qos.logback.core.ConsoleAppender">
