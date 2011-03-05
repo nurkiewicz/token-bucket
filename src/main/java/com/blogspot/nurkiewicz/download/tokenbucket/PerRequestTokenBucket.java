@@ -1,7 +1,10 @@
 package com.blogspot.nurkiewicz.download.tokenbucket;
 
+import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -17,6 +20,7 @@ import static java.lang.Math.min;
  * @since 04.03.11, 22:08
  */
 @Service
+@ManagedResource
 public class PerRequestTokenBucket extends TokenBucketSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(PerRequestTokenBucket.class);
@@ -25,9 +29,9 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 
 	private ScheduledExecutorService executorService;
 
-	private int maxTokens = 1000;
+	private volatile int maxTokens = 1000;
 
-	private int bucketFillPerSecond = 10;
+	private volatile int bucketFillPerSecond = 10;
 
 	@PostConstruct
 	public void startBucketFillingThread() {
@@ -41,7 +45,6 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 		log.info("Stopping startBucketFillingThread");
 		executorService.shutdownNow();
 	}
-
 
 	private class FillBucketTask implements Runnable {
 		@Override
@@ -89,5 +92,30 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 	public void completed(HttpServletRequest req) {
 		countByRequestNo.remove(getRequestNo(req));
 		log.trace("Completed #{}, destroying bucket", getRequestNo(req));
+	}
+
+	@ManagedAttribute
+	public int getMaxTokens() {
+		return maxTokens;
+	}
+
+	public void setMaxTokens(int maxTokens) {
+		Validate.isTrue(maxTokens >= 0);
+		this.maxTokens = maxTokens;
+	}
+
+	@ManagedAttribute
+	public int getBucketFillPerSecond() {
+		return bucketFillPerSecond;
+	}
+
+	public void setBucketFillPerSecond(int bucketFillPerSecond) {
+		Validate.isTrue(maxTokens > 0);
+		this.bucketFillPerSecond = bucketFillPerSecond;
+	}
+
+	@ManagedAttribute
+	public int getOngoingRequests() {
+		return countByRequestNo.size();
 	}
 }
