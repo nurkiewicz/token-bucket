@@ -15,6 +15,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Tomasz Nurkiewicz
@@ -28,9 +29,13 @@ public class DownloadServletHandler implements HttpRequestHandler {
 	@Resource
 	private TokenBucket tokenBucket;
 
+	private AtomicLong requestNo = new AtomicLong();
+
 	@Override
 	public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		log.info("Serving: {}", request.getRequestURI());
+		long curRequestNo = requestNo.incrementAndGet();
+		request.setAttribute(TokenBucket.REQUEST_NO, curRequestNo);
+		log.info("Serving: {} ({})", request.getRequestURI(), curRequestNo);
 //		final File file = new File(req.getRequestURI());
 		final File file = new File("/tmp/jsp-2.1-6.1.9.jar");
 		final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
@@ -44,7 +49,6 @@ public class DownloadServletHandler implements HttpRequestHandler {
 			input.close();
 			tokenBucket.completed(request);
 		}
-
 	}
 
 	private void sendFile(HttpServletRequest request, HttpServletResponse response, BufferedInputStream input) throws IOException, InterruptedException {
