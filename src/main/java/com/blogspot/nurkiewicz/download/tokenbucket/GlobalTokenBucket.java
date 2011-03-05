@@ -28,27 +28,28 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalTokenBucket.class);
 
-	private Semaphore count = new Semaphore(0, false);
 	private ScheduledExecutorService executorService;
 
-	private volatile int maxTokens = 10000;
+	private Semaphore bucketSize = new Semaphore(0, false);
 
-	private volatile int bucketFillPerSecond = 10;
+	private volatile int bucketCapacity = 10000;
+
+	private final int BUCKET_FILLS_PER_SECOND = 10;
 
 	@PostConstruct
 	public void startBucketFillingThread() {
 		log.info("Creating startBucketFillingThread");
 		executorService = Executors.newScheduledThreadPool(1);
-		executorService.scheduleAtFixedRate(new FillBucketTask(), 0, 1000 / bucketFillPerSecond, TimeUnit.MILLISECONDS);
+		executorService.scheduleAtFixedRate(new FillBucketTask(), 0, 1000 / BUCKET_FILLS_PER_SECOND, TimeUnit.MILLISECONDS);
 	}
 
 	private class FillBucketTask implements Runnable {
 		@Override
 		public void run() {
-			final int releaseCount = min(maxTokens / bucketFillPerSecond, maxTokens - count.availablePermits());
+			final int releaseCount = min(bucketCapacity / BUCKET_FILLS_PER_SECOND, bucketCapacity - bucketSize.availablePermits());
 			if (releaseCount > 0) {
-				count.release(releaseCount);
-				log.debug("Released {} tokens, current {}, queued connections: {}", new Object[]{releaseCount, count.availablePermits(), count.getQueueLength()});
+				bucketSize.release(releaseCount);
+				log.debug("Released {} tokens, current {}, queued connections: {}", new Object[]{releaseCount, bucketSize.availablePermits(), bucketSize.getQueueLength()});
 			}
 		}
 	}
@@ -60,36 +61,32 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 
 	@Override
 	public void takeBlocking(int howMany) throws InterruptedException {
-		count.acquire(howMany);
+		bucketSize.acquire(howMany);
 	}
 
 	@Override
 	public boolean tryTake(int howMany) {
-		return count.tryAcquire(howMany);
+		return bucketSize.tryAcquire(howMany);
 	}
 
 	@ManagedAttribute
-	public int getMaxTokens() {
-		return maxTokens;
+	public int getBucketCapacity() {
+		return bucketCapacity;
 	}
 
-	public void setMaxTokens(int maxTokens) {
-		isTrue(maxTokens >= 0);
-		this.maxTokens = maxTokens;
+	@ManagedAttribute
+	public void setBucketCapacity(int bucketCapacity) {
+		isTrue(bucketCapacity >= 0);
+		this.bucketCapacity = bucketCapacity;
 	}
 
 	@ManagedAttribute
 	public int getOngoingRequests() {
-		return count.getQueueLength();
+		return bucketSize.getQueueLength();
 	}
 
 	@ManagedAttribute
-	public int getBucketFillPerSecond() {
-		return bucketFillPerSecond;
-	}
-
-	public void setBucketFillPerSecond(int bucketFillPerSecond) {
-		isTrue(bucketFillPerSecond > 0);
-		this.bucketFillPerSecond = bucketFillPerSecond;
+	public int getBucketSize() {
+		return bucketSize.availablePermits();
 	}
 }
