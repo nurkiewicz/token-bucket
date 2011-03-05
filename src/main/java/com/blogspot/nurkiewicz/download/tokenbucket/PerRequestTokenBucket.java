@@ -25,19 +25,19 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(PerRequestTokenBucket.class);
 
-	private final ConcurrentMap<Long, Semaphore> countByRequestNo = new ConcurrentHashMap<Long, Semaphore>();
-
 	private ScheduledExecutorService executorService;
 
-	private volatile int maxTokens = 1000;
+	private final ConcurrentMap<Long, Semaphore> bucketSizeByRequestNo = new ConcurrentHashMap<Long, Semaphore>();
 
-	private volatile int bucketFillPerSecond = 10;
+	private volatile int eachBucketCapacity = 1000;
+
+	private final int BUCKET_FILLS_PER_SECOND = 10;
 
 	@PostConstruct
 	public void startBucketFillingThread() {
 		log.info("Creating startBucketFillingThread");
 		executorService = Executors.newScheduledThreadPool(1);
-		executorService.scheduleAtFixedRate(new FillBucketTask(), 0, 1000 / bucketFillPerSecond, TimeUnit.MILLISECONDS);
+		executorService.scheduleAtFixedRate(new FillBucketTask(), 0, 1000 / BUCKET_FILLS_PER_SECOND, TimeUnit.MILLISECONDS);
 	}
 
 	@PreDestroy
@@ -49,10 +49,10 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 	private class FillBucketTask implements Runnable {
 		@Override
 		public void run() {
-			final int maxToRelease = maxTokens / bucketFillPerSecond;
-			log.debug("Releasing up to {} tokens, total stored counts: {}", maxToRelease, countByRequestNo.size());
-			for (Map.Entry<Long, Semaphore> count : countByRequestNo.entrySet()) {
-				final int releaseCount = min(maxToRelease, maxTokens - count.getValue().availablePermits());
+			final int maxToRelease = eachBucketCapacity / BUCKET_FILLS_PER_SECOND;
+			log.debug("Releasing up to {} tokens, total stored counts: {}", maxToRelease, bucketSizeByRequestNo.size());
+			for (Map.Entry<Long, Semaphore> count : bucketSizeByRequestNo.entrySet()) {
+				final int releaseCount = min(maxToRelease, eachBucketCapacity - count.getValue().availablePermits());
 				if (releaseCount > 0) {
 					count.getValue().release(releaseCount);
 					log.trace("Releasing {} tokens for request #{}", releaseCount, count.getKey());
@@ -67,10 +67,10 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 	}
 
 	private Semaphore getCount(HttpServletRequest req) {
-		final Semaphore semaphore = countByRequestNo.get(getRequestNo(req));
+		final Semaphore semaphore = bucketSizeByRequestNo.get(getRequestNo(req));
 		if (semaphore == null) {
 			final Semaphore newSemaphore = new Semaphore(0, false);
-			if (countByRequestNo.putIfAbsent(getRequestNo(req), newSemaphore) == null) {
+			if (bucketSizeByRequestNo.putIfAbsent(getRequestNo(req), newSemaphore) == null) {
 				log.trace("Created new bucket for #{}", getRequestNo(req));
 			}
 			return newSemaphore;
@@ -90,32 +90,23 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 
 	@Override
 	public void completed(HttpServletRequest req) {
-		countByRequestNo.remove(getRequestNo(req));
+		bucketSizeByRequestNo.remove(getRequestNo(req));
 		log.trace("Completed #{}, destroying bucket", getRequestNo(req));
 	}
 
 	@ManagedAttribute
-	public int getMaxTokens() {
-		return maxTokens;
-	}
-
-	public void setMaxTokens(int maxTokens) {
-		Validate.isTrue(maxTokens >= 0);
-		this.maxTokens = maxTokens;
+	public int getEachBucketCapacity() {
+		return eachBucketCapacity;
 	}
 
 	@ManagedAttribute
-	public int getBucketFillPerSecond() {
-		return bucketFillPerSecond;
-	}
-
-	public void setBucketFillPerSecond(int bucketFillPerSecond) {
-		Validate.isTrue(maxTokens > 0);
-		this.bucketFillPerSecond = bucketFillPerSecond;
+	public void setEachBucketCapacity(int eachBucketCapacity) {
+		Validate.isTrue(eachBucketCapacity >= 0);
+		this.eachBucketCapacity = eachBucketCapacity;
 	}
 
 	@ManagedAttribute
 	public int getOngoingRequests() {
-		return countByRequestNo.size();
+		return bucketSizeByRequestNo.size();
 	}
 }
