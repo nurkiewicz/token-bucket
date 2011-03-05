@@ -14,6 +14,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Math.min;
 import static org.apache.commons.lang.Validate.isTrue;
 
 /**
@@ -32,16 +33,24 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private volatile int maxTokens = 10000;
 
+	private volatile int bucketFillPerSecond = 10;
+
 	@PostConstruct
 	public void startBucketFillingThread() {
+		log.info("Creating startBucketFillingThread");
 		executorService = Executors.newScheduledThreadPool(1);
-		executorService.scheduleAtFixedRate(new Runnable() {
-			@Override
-			public void run() {
-				log.debug("Releasing {} tokens, current {}, queued connections: {}", new Object[] {maxTokens, count.availablePermits(), count.getQueueLength()});
-				count.release(maxTokens - count.availablePermits());
+		executorService.scheduleAtFixedRate(new FillBucketTask(), 0, 1000 / bucketFillPerSecond, TimeUnit.MILLISECONDS);
+	}
+
+	private class FillBucketTask implements Runnable {
+		@Override
+		public void run() {
+			final int releaseCount = min(maxTokens / bucketFillPerSecond, maxTokens - count.availablePermits());
+			if (releaseCount > 0) {
+				count.release(releaseCount);
+				log.debug("Released {} tokens, current {}, queued connections: {}", new Object[]{releaseCount, count.availablePermits(), count.getQueueLength()});
 			}
-		}, 1, 1, TimeUnit.SECONDS);
+		}
 	}
 
 	@PreDestroy
@@ -72,5 +81,15 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 	@ManagedAttribute
 	public int getOngoingRequests() {
 		return count.getQueueLength();
+	}
+
+	@ManagedAttribute
+	public int getBucketFillPerSecond() {
+		return bucketFillPerSecond;
+	}
+
+	public void setBucketFillPerSecond(int bucketFillPerSecond) {
+		isTrue(bucketFillPerSecond > 0);
+		this.bucketFillPerSecond = bucketFillPerSecond;
 	}
 }
