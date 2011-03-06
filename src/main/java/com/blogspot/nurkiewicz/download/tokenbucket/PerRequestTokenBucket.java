@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.ServletRequest;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -62,11 +62,11 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 	}
 
 	@Override
-	public void takeBlocking(HttpServletRequest req, int howMany) throws InterruptedException {
+	public void takeBlocking(ServletRequest req, int howMany) throws InterruptedException {
 		getCount(req).acquire(howMany);
 	}
 
-	private Semaphore getCount(HttpServletRequest req) {
+	private Semaphore getCount(ServletRequest req) {
 		final Semaphore semaphore = bucketSizeByRequestNo.get(getRequestNo(req));
 		if (semaphore == null) {
 			final Semaphore newSemaphore = new Semaphore(0, false);
@@ -79,17 +79,17 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 		}
 	}
 
-	private Long getRequestNo(HttpServletRequest req) {
+	private Long getRequestNo(ServletRequest req) {
 		return (Long)req.getAttribute(REQUEST_NO);
 	}
 
 	@Override
-	public boolean tryTake(HttpServletRequest req, int howMany) {
+	public boolean tryTake(ServletRequest req, int howMany) {
 		return getCount(req).tryAcquire(howMany);
 	}
 
 	@Override
-	public void completed(HttpServletRequest req) {
+	public void completed(ServletRequest req) {
 		bucketSizeByRequestNo.remove(getRequestNo(req));
 		log.trace("Completed #{}, destroying bucket", getRequestNo(req));
 	}

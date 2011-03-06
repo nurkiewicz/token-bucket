@@ -1,6 +1,6 @@
 package com.blogspot.nurkiewicz.download.tokenbucket;
 
-import javax.servlet.http.HttpServletRequest;
+import javax.servlet.ServletRequest;
 
 /**
  * @author Tomasz Nurkiewicz
@@ -11,11 +11,11 @@ public interface TokenBucket {
 	int TOKEN_PERMIT_SIZE = 1024;
 	String REQUEST_NO = "REQUEST_NO";
 
-	void takeBlocking(HttpServletRequest req) throws InterruptedException;
-	void takeBlocking(HttpServletRequest req, int howMany) throws InterruptedException;
+	void takeBlocking(ServletRequest req) throws InterruptedException;
+	void takeBlocking(ServletRequest req, int howMany) throws InterruptedException;
 
-	boolean tryTake(HttpServletRequest req);
-	boolean tryTake(HttpServletRequest req, int howMany);
+	boolean tryTake(ServletRequest req);
+	boolean tryTake(ServletRequest req, int howMany);
 
-	void completed(HttpServletRequest req);
+	void completed(ServletRequest req);
 }
