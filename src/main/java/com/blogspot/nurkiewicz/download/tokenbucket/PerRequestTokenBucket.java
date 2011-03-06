@@ -80,7 +80,11 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 	}
 
 	private Long getRequestNo(ServletRequest req) {
-		return (Long)req.getAttribute(REQUEST_NO);
+		final Long reqNo = (Long) req.getAttribute(REQUEST_NO);
+		if (reqNo == null) {
+			throw new IllegalAccessError("Request # not found in: " + req);
+		}
+		return reqNo;
 	}
 
 	@Override
