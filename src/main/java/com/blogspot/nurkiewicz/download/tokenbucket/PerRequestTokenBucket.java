@@ -29,7 +29,7 @@ public class PerRequestTokenBucket extends TokenBucketSupport {
 
 	private final ConcurrentMap<Long, Semaphore> bucketSizeByRequestNo = new ConcurrentHashMap<Long, Semaphore>();
 
-	private volatile int eachBucketCapacity = 1000 / 50;
+	private volatile int eachBucketCapacity = 200 * 1024 / TOKEN_PERMIT_SIZE;
 
 	private final int BUCKET_FILLS_PER_SECOND = 10;
 

@@ -34,7 +34,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(DownloadServletHandler.class);
 
-	private static final int WORKER_THREADS = 5;
+	private static final int WORKER_THREADS = 1;
 
 	@Resource
 	private TokenBucket tokenBucket;
@@ -60,7 +60,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		request.setAttribute(TokenBucket.REQUEST_NO, curRequestNo);
 		log.info("Serving: {} ({})", request.getRequestURI(), curRequestNo);
 //		final File file = new File(req.getRequestURI());
-		final File file = new File("/tmp/jsp-2.1-6.1.9.jar");
+		final File file = new File("/home/dev/tmp/ehcache-1.6.2.jar");
 		final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
 		response.setContentLength((int) file.length());
 		final AsyncContext asyncContext = request.startAsync(request, response);
