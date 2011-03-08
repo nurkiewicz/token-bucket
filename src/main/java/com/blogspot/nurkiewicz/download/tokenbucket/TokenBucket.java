@@ -8,7 +8,7 @@ import javax.servlet.ServletRequest;
  */
 public interface TokenBucket {
 
-	int TOKEN_PERMIT_SIZE = 1024 * 50;
+	int TOKEN_PERMIT_SIZE = 1024 * 10;
 	String REQUEST_NO = "REQUEST_NO";
 
 	void takeBlocking(ServletRequest req) throws InterruptedException;

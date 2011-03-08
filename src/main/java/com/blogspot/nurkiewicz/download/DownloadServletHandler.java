@@ -3,18 +3,25 @@ package com.blogspot.nurkiewicz.download;
 import com.blogspot.nurkiewicz.download.tokenbucket.TokenBucket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.HttpRequestHandler;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
+import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -37,7 +44,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		request.setAttribute(TokenBucket.REQUEST_NO, curRequestNo);
 		log.info("Serving: {} ({})", request.getRequestURI(), curRequestNo);
 //		final File file = new File(req.getRequestURI());
-		final File file = new File("/tmp/jsp-2.1-6.1.9.jar");
+		final File file = new File("/home/dev/tmp/ehcache-1.6.2.jar");
 		final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
 		try {
 			response.setContentLength((int) file.length());
