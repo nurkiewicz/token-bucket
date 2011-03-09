@@ -81,7 +81,7 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 	}
 
 	@ManagedAttribute
-	public int getOngoingRequests() {
+	public int getAwaitingRequests() {
 		return bucketSize.getQueueLength();
 	}
 
