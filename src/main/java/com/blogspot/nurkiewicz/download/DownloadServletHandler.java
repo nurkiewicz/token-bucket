@@ -12,8 +12,6 @@ import org.springframework.web.HttpRequestHandler;
 import javax.annotation.Resource;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
@@ -60,23 +58,20 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
 		private final BufferedInputStream fileInputStream;
 		private final byte[] buffer = new byte[TokenBucket.TOKEN_PERMIT_SIZE];
-		private final AsyncContext asyncContext;
+		private final AsyncContext ctx;
 		private final long requestNo;
-		private final ServletRequest request;
-		private final ServletOutputStream responseOutputStream;
+		int chunkNo;
 
-		public DownloadChunkTask(AsyncContext asyncContext, BufferedInputStream fileInputStream, long requestNo) throws IOException {
-			this.asyncContext = asyncContext;
+		public DownloadChunkTask(AsyncContext ctx, BufferedInputStream fileInputStream, long requestNo) throws IOException {
+			this.ctx = ctx;
 			this.requestNo = requestNo;
-			this.request = asyncContext.getRequest();
-			this.responseOutputStream = asyncContext.getResponse().getOutputStream();
 			this.fileInputStream = fileInputStream;
 		}
 
 		@Override
 		public Void call() throws Exception {
 			try {
-				if (tokenBucket.tryTake(request)) {
+				if (tokenBucket.tryTake(ctx.getRequest())) {
 					sendChunkWorthOneToken();
 				} else
 					downloadWorkersPool.submit(this);
@@ -88,8 +83,9 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		}
 
 		private void sendChunkWorthOneToken() throws IOException {
+			log.trace("Sending chunk {} of request ({})", chunkNo++, requestNo);
 			final int bytesCount = fileInputStream.read(buffer);
-			responseOutputStream.write(buffer, 0, bytesCount);
+			ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
 			if (bytesCount < buffer.length) {
 				done();
 			} else {
@@ -99,8 +95,8 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
 		private void done() throws IOException {
 			fileInputStream.close();
-			tokenBucket.completed(request);
-			asyncContext.complete();
+			tokenBucket.completed(ctx.getRequest());
+			ctx.complete();
 			log.debug("Done: ({})", requestNo);
 		}
 	}
