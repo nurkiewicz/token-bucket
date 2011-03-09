@@ -5,14 +5,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import static java.lang.Math.min;
 import static org.apache.commons.lang.Validate.isTrue;
@@ -34,29 +31,15 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private volatile int bucketCapacity = 10 * 200 * 1024 / TOKEN_PERMIT_SIZE;
 
-	private final int BUCKET_FILLS_PER_SECOND = 10;
+	public static final int BUCKET_FILLS_PER_SECOND = 10;
 
-	@PostConstruct
-	public void startBucketFillingThread() {
-		log.info("Creating startBucketFillingThread");
-		executorService = Executors.newScheduledThreadPool(1);
-		executorService.scheduleAtFixedRate(new FillBucketTask(), 0, 1000 / BUCKET_FILLS_PER_SECOND, TimeUnit.MILLISECONDS);
-	}
-
-	private class FillBucketTask implements Runnable {
-		@Override
-		public void run() {
-			final int releaseCount = min(bucketCapacity / BUCKET_FILLS_PER_SECOND, bucketCapacity - bucketSize.availablePermits());
-			if (releaseCount > 0) {
-				bucketSize.release(releaseCount);
-				log.debug("Released {} tokens, current {}, queued connections: {}", new Object[]{releaseCount, bucketSize.availablePermits(), bucketSize.getQueueLength()});
-			}
+	@Scheduled(fixedRate = 1000 / BUCKET_FILLS_PER_SECOND)
+	public void fillBucket() {
+		final int releaseCount = min(bucketCapacity / BUCKET_FILLS_PER_SECOND, bucketCapacity - bucketSize.availablePermits());
+		if (releaseCount > 0) {
+			bucketSize.release(releaseCount);
+			log.debug("Released {} tokens, current {}, queued connections: {}", new Object[]{releaseCount, bucketSize.availablePermits(), bucketSize.getQueueLength()});
 		}
-	}
-
-	@PreDestroy
-	public void stopBucketFillingThread() {
-		executorService.shutdownNow();
 	}
 
 	@Override
