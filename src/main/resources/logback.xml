@@ -5,6 +5,7 @@
 
 	<logger name="org" level="INFO"/>
 	<logger name="com.blogspot.nurkiewicz.download.tokenbucket.GlobalTokenBucket" level="INFO"/>
+	<logger name="com.blogspot.nurkiewicz.download.DownloadServletHandler" level="WARN"/>
 
 	<root level="ALL">
 		<appender class="ch.qos.logback.core.ConsoleAppender">
