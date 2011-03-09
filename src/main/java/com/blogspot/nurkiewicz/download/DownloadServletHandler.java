@@ -5,11 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
 import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.HttpRequestHandler;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
@@ -21,7 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -41,18 +40,8 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
 	private AtomicLong requestNo = new AtomicLong();
 
-	private ExecutorService downloadWorkers;
-	private final LinkedBlockingQueue<Runnable> downloadTasksQueue = new LinkedBlockingQueue<Runnable>();
-
-	@PostConstruct
-	public void startDownloadWorkerThreadPool() {
-		downloadWorkers = new ThreadPoolExecutor(WORKER_THREADS, WORKER_THREADS, 0L, TimeUnit.MILLISECONDS, downloadTasksQueue);
-	}
-
-	@PreDestroy
-	public void shutDownDownloadWorkerThreadPool() {
-		downloadWorkers.shutdownNow();
-	}
+	@Resource
+	private ThreadPoolTaskExecutor downloadWorkersPool;
 
 	@Override
 	public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -64,7 +53,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
 		response.setContentLength((int) file.length());
 		final AsyncContext asyncContext = request.startAsync(request, response);
-		downloadWorkers.submit(new DownloadChunkTask(asyncContext, input, curRequestNo));
+		downloadWorkersPool.submit(new DownloadChunkTask(asyncContext, input, curRequestNo));
 	}
 
 	private class DownloadChunkTask implements Callable<Void> {
@@ -90,7 +79,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 				if (tokenBucket.tryTake(request)) {
 					sendChunkWorthOneToken();
 				} else
-					downloadWorkers.submit(this);
+					downloadWorkersPool.submit(this);
 			} catch (Exception e) {
 				log.error("Error while sending data chunk, aborting ("  + requestNo + ")", e);
 				done();
@@ -104,7 +93,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 			if (bytesCount < buffer.length) {
 				done();
 			} else {
-				downloadWorkers.submit(this);
+				downloadWorkersPool.submit(this);
 			}
 		}
 
@@ -118,7 +107,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
 	@ManagedAttribute
 	public int getAwaitingChunks() {
-		return downloadTasksQueue.size();
+		return downloadWorkersPool.getThreadPoolExecutor().getQueue().size();
 	}
 
 }
