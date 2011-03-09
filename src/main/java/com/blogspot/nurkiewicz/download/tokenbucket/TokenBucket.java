@@ -6,7 +6,7 @@ package com.blogspot.nurkiewicz.download.tokenbucket;
  */
 public interface TokenBucket {
 
-	int TOKEN_PERMIT_SIZE = 1024;
+	int TOKEN_PERMIT_SIZE = 1024 * 10;
 
 	void takeBlocking() throws InterruptedException;
 	void takeBlocking(int howMany) throws InterruptedException;

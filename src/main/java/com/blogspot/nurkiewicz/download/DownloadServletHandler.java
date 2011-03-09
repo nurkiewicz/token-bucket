@@ -32,7 +32,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 	public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		log.info("Serving: {}", request.getRequestURI());
 //		final File file = new File(req.getRequestURI());
-		final File file = new File("/tmp/jsp-2.1-6.1.9.jar");
+		final File file = new File("/home/dev/tmp/ehcache-1.6.2.jar");
 		final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
 		try {
 			response.setContentLength((int) file.length());
