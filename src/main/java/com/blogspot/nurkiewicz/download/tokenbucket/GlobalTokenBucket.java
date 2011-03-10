@@ -8,7 +8,6 @@ import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 
 import static java.lang.Math.min;
@@ -24,8 +23,6 @@ import static org.apache.commons.lang.Validate.isTrue;
 public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalTokenBucket.class);
-
-	private ScheduledExecutorService executorService;
 
 	private Semaphore bucketSize = new Semaphore(0, false);
 
