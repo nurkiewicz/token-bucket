@@ -29,7 +29,7 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private Semaphore bucketSize = new Semaphore(0, false);
 
-	private volatile int bucketCapacity = 10 * 200 * 1024 / TOKEN_PERMIT_SIZE;
+	private volatile int bucketCapacity = 1000;
 
 	public static final int BUCKET_FILLS_PER_SECOND = 10;
 
