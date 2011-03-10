@@ -24,7 +24,7 @@ public class GlobalTokenBucket extends TokenBucketSupport {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalTokenBucket.class);
 
-	private Semaphore bucketSize = new Semaphore(0, false);
+	private final Semaphore bucketSize = new Semaphore(0, false);
 
 	private volatile int bucketCapacity = 1000;
 
