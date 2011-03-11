@@ -31,8 +31,6 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(DownloadServletHandler.class);
 
-	private static final int WORKER_THREADS = 1;
-
 	@Resource
 	private TokenBucket tokenBucket;
 
