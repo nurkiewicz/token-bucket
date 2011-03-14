@@ -1,4 +1,5 @@
-#memoryChart {
-	width: 600px;
-	height: 350px;
+.chart {
+	width: 400px;
+	height: 270px;
+	float: left;
 }
