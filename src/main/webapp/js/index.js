@@ -1,5 +1,5 @@
 $(document).ready(function() {
-	var factory = new JmxChartsFactory();
+	var factory = new JmxChartsFactory(300);
 	factory.create('memoryChart', {
 		name:     'java.lang:type=Memory',
 		attribute: 'HeapMemoryUsage',
@@ -20,14 +20,17 @@ $(document).ready(function() {
 	factory.pollAndUpdateCharts();
 });
 
-function JmxChartsFactory() {
+function JmxChartsFactory(keepHistorySec, pollInterval) {
 	var jolokia = new Jolokia("/jolokia");
 	var charts = [];
 	var that = this;
 
+	pollInterval = pollInterval || 1000;
+	var keepPoints = (keepHistorySec || 120) / (pollInterval / 1000);
+
 	setInterval(function() {
 		that.pollAndUpdateCharts();
-	}, 1000);
+	}, pollInterval);
 
 	this.create = function(id, mbean) {
 		charts.push({
@@ -59,10 +62,10 @@ function JmxChartsFactory() {
 		$.each(responses, function() {
 			var series = charts[curChart++].series;
 			var point = {
-				x: this.timestamp,
+				x: this.timestamp * 1000,
 				y: parseInt(this.value)
 			};
-			series.addPoint(point, true, series.data.length >= 60);
+			series.addPoint(point, true, series.data.length >= keepPoints);
 		});
 	}
 
