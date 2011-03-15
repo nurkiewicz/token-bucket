@@ -1,71 +1,98 @@
 $(document).ready(function() {
-	new JmxChart('memoryChart', 'java.lang:type=Memory', 'HeapMemoryUsage', 'used');
-	new JmxChart('totalThreadsCountChart', 'java.lang:type=Threading', 'ThreadCount', '');
-	new JmxChart('httpBusyChart', 'Catalina:name="http-bio-8080",type=ThreadPool', 'currentThreadsBusy', '');
-	new JmxChart('httpQueueSize', 'Catalina:name=executor,type=Executor', 'queueSize', '');
+	var factory = new JmxChartsFactory();
+	factory.create('memoryChart', {
+		name:     'java.lang:type=Memory',
+		attribute: 'HeapMemoryUsage',
+		path:      'used'
+	});
+	factory.create('totalThreadsCountChart', {
+		name:     'java.lang:type=Threading',
+		attribute: 'ThreadCount'
+	});
+	factory.create('httpBusyChart', {
+		name: 'Catalina:name="http-bio-8080",type=ThreadPool',
+		attribute: 'currentThreadsBusy'
+	});
+	factory.create('httpQueueSize', {
+		name: 'Catalina:name=executor,type=Executor',
+		attribute: 'queueSize'
+	});
+	factory.pollAndUpdateCharts();
 });
 
-function JmxChart(id, mbean, attribute, path) {
-	var jmx = new Jolokia("/jolokia");
+function JmxChartsFactory() {
+	var jolokia = new Jolokia("/jolokia");
+	var charts = [];
+	var that = this;
 
-	new Highcharts.Chart({
-		chart: {
-			renderTo: id,
-			animation: false,
-			defaultSeriesType: 'spline',
-			marginRight: 10,
-			events: {
-				load: function() {
-					var series = this.series[0];
-					setInterval(function() {
-						series.addPoint(getAttribute(), true, series.data.length >= 30);
-					}, 1000);
-				}
-			}
-		},
+	setInterval(function() {
+		that.pollAndUpdateCharts();
+	}, 1000);
 
-		title: {
-			text: mbean
-		},
-		xAxis: {
-			type: 'datetime'
-		},
-		yAxis: {
-			title: {
-				text: attribute
-			}
-		},
-		legend: {
-			enabled: false
-		},
-		exporting: {
-			enabled: false
-		},
-		plotOptions: {
-			spline: {
-				lineWidth: 1,
-				marker: {
-					enabled: false
-				}
-			}
-		},
+	this.create = function(id, mbean) {
+		charts.push({
+			series: createChart(id, mbean).series[0],
+			mbean: mbean
+		});
+	};
 
-		series: [
+	this.pollAndUpdateCharts = function() {
+		var requests = prepareBatchRequest();
+		var responses = jolokia.request(requests);
+		updateCharts(responses);
+	};
 
-			{
-				type: 'spline',
-				data: [getAttribute()],
-				name: path || attribute
-			}
-		]
-	});
-
-	function getAttribute() {
-		return {
-			x: new Date().getTime(),
-			y: parseInt(jmx.getAttribute(mbean, attribute, path))
-		}
+	function prepareBatchRequest() {
+		return $.map(charts, function(chart) {
+			var mbean = chart.mbean;
+			return {
+				type: "read",
+				mbean: mbean.name,
+				attribute: mbean.attribute,
+				path: mbean.path
+			};
+		});
 	}
 
+	function updateCharts(responses) {
+		var curChart = 0;
+		$.each(responses, function() {
+			var series = charts[curChart++].series;
+			var point = {
+				x: this.timestamp,
+				y: parseInt(this.value)
+			};
+			series.addPoint(point, true, series.data.length >= 60);
+		});
+	}
 
+	function createChart(id, mbean) {
+		return new Highcharts.Chart({
+			chart: {
+				renderTo: id,
+				animation: false,
+				defaultSeriesType: 'spline'
+			},
+			title: { text: mbean.name },
+			xAxis: { type: 'datetime' },
+			yAxis: {
+				title: { text: mbean.attribute }
+			},
+			legend: { enabled: false },
+			exporting: { enabled: false },
+			plotOptions: {
+				spline: {
+					lineWidth: 1,
+					marker: { enabled: false }
+				}
+			},
+			series: [
+				{
+					type: 'spline',
+					data: [],
+					name: mbean.path || mbean.attribute
+				}
+			]
+		})
+	}
 }
