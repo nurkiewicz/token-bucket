@@ -91,6 +91,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 				enabled: true,
 				borderWidth: 0
 			},
+			credits: {enabled: false},
 			exporting: { enabled: false },
 			plotOptions: {
 				spline: {
