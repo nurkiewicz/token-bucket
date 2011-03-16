@@ -1,15 +1,17 @@
 $(document).ready(function() {
 	var factory = new JmxChartsFactory();
-	factory.create('usedMemoryChart', {
-		name:     'java.lang:type=Memory',
-		attribute: 'HeapMemoryUsage',
-		path:      'used'
-	});
-	factory.create('totalMemoryChart', {
-		name:     'java.lang:type=Memory',
-		attribute: 'HeapMemoryUsage',
-		path:      'committed'
-	});
+	factory.create('usedMemoryChart', [
+		{
+			name: 'java.lang:type=Memory',
+			attribute: 'HeapMemoryUsage',
+			path: 'committed'
+		},
+		{
+			name: 'java.lang:type=Memory',
+			attribute: 'HeapMemoryUsage',
+			path: 'used'
+		}
+	]);
 	factory.create('totalThreadsCountChart', {
 		name:     'java.lang:type=Threading',
 		attribute: 'ThreadCount'
@@ -27,7 +29,8 @@ $(document).ready(function() {
 
 function JmxChartsFactory(keepHistorySec, pollInterval) {
 	var jolokia = new Jolokia("/jolokia");
-	var charts = [];
+	var series = [];
+	var monMbeans = [];
 	var that = this;
 
 	pollInterval = pollInterval || 1000;
@@ -37,11 +40,10 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 		that.pollAndUpdateCharts();
 	}, pollInterval);
 
-	this.create = function(id, mbean) {
-		charts.push({
-			series: createChart(id, mbean).series[0],
-			mbean: mbean
-		});
+	this.create = function(id, mbeans) {
+		mbeans = $.makeArray(mbeans);
+		series = series.concat(createChart(id, mbeans).series);
+		monMbeans = monMbeans.concat(mbeans);
 	};
 
 	this.pollAndUpdateCharts = function() {
@@ -51,8 +53,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	};
 
 	function prepareBatchRequest() {
-		return $.map(charts, function(chart) {
-			var mbean = chart.mbean;
+		return $.map(monMbeans, function(mbean) {
 			return {
 				type: "read",
 				mbean: mbean.name,
@@ -69,24 +70,27 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 				x: this.timestamp * 1000,
 				y: parseInt(this.value)
 			};
-			var series = charts[curChart++].series;
-			series.addPoint(point, true, series.data.length >= keepPoints);
+			var curSeries = series[curChart++];
+			curSeries.addPoint(point, true, curSeries.data.length >= keepPoints);
 		});
 	}
 
-	function createChart(id, mbean) {
+	function createChart(id, mbeans) {
 		return new Highcharts.Chart({
 			chart: {
 				renderTo: id,
 				animation: false,
 				defaultSeriesType: 'spline'
 			},
-			title: { text: mbean.name },
+			title: { text: mbeans[0].name },
 			xAxis: { type: 'datetime' },
 			yAxis: {
-				title: { text: mbean.attribute }
+				title: { text: mbeans[0].attribute }
 			},
-			legend: { enabled: false },
+			legend: {
+				enabled: true,
+				borderWidth: 0
+			},
 			exporting: { enabled: false },
 			plotOptions: {
 				spline: {
@@ -94,13 +98,13 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 					marker: { enabled: false }
 				}
 			},
-			series: [
-				{
+			series: $.map(mbeans, function(mbean) {
+				return {
 					type: 'spline',
 					data: [],
 					name: mbean.path || mbean.attribute
 				}
-			]
+			})
 		})
 	}
 }
