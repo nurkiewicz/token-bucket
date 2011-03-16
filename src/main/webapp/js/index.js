@@ -1,6 +1,6 @@
 $(document).ready(function() {
 	var factory = new JmxChartsFactory();
-	factory.create('usedMemoryChart', [
+	factory.create([
 		{
 			name: 'java.lang:type=Memory',
 			attribute: 'HeapMemoryUsage',
@@ -12,19 +12,21 @@ $(document).ready(function() {
 			path: 'used'
 		}
 	]);
-	factory.create('totalThreadsCountChart', {
+	factory.create({
 		name:     'java.lang:type=Threading',
 		attribute: 'ThreadCount'
 	});
-	factory.create('httpBusyChart', {
+	factory.create({
 		name: 'Catalina:name="http-bio-8080",type=ThreadPool',
 		attribute: 'currentThreadsBusy'
 	});
-	factory.create('httpQueueSize', {
+	factory.create({
 		name: 'Catalina:name=executor,type=Executor',
 		attribute: 'queueSize'
 	});
 	factory.pollAndUpdateCharts();
+
+
 });
 
 function JmxChartsFactory(keepHistorySec, pollInterval) {
@@ -33,6 +35,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	var monMbeans = [];
 	var that = this;
 
+	setupPortletsContainer();
 	pollInterval = pollInterval || 1000;
 	var keepPoints = (keepHistorySec || 600) / (pollInterval / 1000);
 
@@ -40,8 +43,9 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 		that.pollAndUpdateCharts();
 	}, pollInterval);
 
-	this.create = function(id, mbeans) {
+	this.create = function(mbeans) {
 		mbeans = $.makeArray(mbeans);
+		var id = createPortlet();
 		series = series.concat(createChart(id, mbeans).series);
 		monMbeans = monMbeans.concat(mbeans);
 	};
@@ -51,6 +55,29 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 		var responses = jolokia.request(requests);
 		updateCharts(responses);
 	};
+
+	function createPortlet() {
+		var idx = series.length;
+		var id = 'portlet-' + idx;
+		$('#portlet-template')
+				.clone(true)
+				.find('.portlet-content').attr('id', id).end()
+				.appendTo($('.column')[idx % 3])
+				.removeAttr('id');
+		return id;
+	}
+
+	function setupPortletsContainer() {
+		$(".column").sortable({
+			connectWith: ".column"
+		});
+
+		$(".portlet-header .ui-icon").click(function() {
+			$(this).toggleClass("ui-icon-minusthick").toggleClass("ui-icon-plusthick");
+			$(this).parents(".portlet:first").find(".portlet-content").toggle();
+		});
+		$(".column").disableSelection();
+	}
 
 	function prepareBatchRequest() {
 		return $.map(monMbeans, function(mbean) {

@@ -1,5 +1,45 @@
+#portlet-template {
+	display: none;
+}
+
 .chart {
 	width: 400px;
 	height: 270px;
 	float: left;
+}
+
+.column {
+	width: 422px;
+	float: left;
+	padding-bottom: 100px;
+}
+
+.portlet {
+	width: 408px;
+	margin: 4px 2px;
+	padding: 3px;
+}
+
+.portlet-header {
+	padding-left: 4px;
+}
+
+.portlet-header .ui-icon {
+	float: right;
+}
+
+.portlet-content {
+	width: 400px;
+	height: 270px;
+	margin: 4px;
+}
+
+.ui-sortable-placeholder {
+	border: 1px dotted black;
+	visibility: visible !important;
+	height: 10px !important;
+}
+
+.ui-sortable-placeholder * {
+	visibility: hidden;
 }

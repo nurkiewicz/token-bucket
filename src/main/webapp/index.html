@@ -3,14 +3,24 @@
 <head>
 	<meta charset="utf-8">
 	<link rel="stylesheet" type="text/css" href="css/tokenbucket.css"/>
+	<link rel="stylesheet" type="text/css" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/themes/base/jquery-ui.css"/>
 </head>
 <body>
-<div id="usedMemoryChart" class="chart"></div>
-<div id="totalThreadsCountChart" class="chart"></div>
-<div id="httpBusyChart" class="chart"></div>
-<div id="httpQueueSize" class="chart"></div>
+<div class="demo">
+
+	<div class="portlet ui-widget ui-widget-content ui-helper-clearfix ui-corner-all" id="portlet-template">
+		<div class="portlet-header ui-widget-header ui-corner-all"><span class='ui-icon ui-icon-minusthick'></span><span class="title">&nbsp;</span></div>
+		<div class="portlet-content"></div>
+	</div>
+
+	<div class="column"></div>
+	<div class="column"></div>
+	<div class="column"></div>
+
+</div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/jquery-ui.js"></script>
 <script src="js/ext/jolokia.js"></script>
 <script src="js/ext/jolokia-simple.js"></script>
 <script src="js/ext/highcharts.src.js"></script>
