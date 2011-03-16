@@ -1,9 +1,14 @@
 $(document).ready(function() {
-	var factory = new JmxChartsFactory(300);
-	factory.create('memoryChart', {
+	var factory = new JmxChartsFactory();
+	factory.create('usedMemoryChart', {
 		name:     'java.lang:type=Memory',
 		attribute: 'HeapMemoryUsage',
 		path:      'used'
+	});
+	factory.create('totalMemoryChart', {
+		name:     'java.lang:type=Memory',
+		attribute: 'HeapMemoryUsage',
+		path:      'committed'
 	});
 	factory.create('totalThreadsCountChart', {
 		name:     'java.lang:type=Threading',
@@ -26,7 +31,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	var that = this;
 
 	pollInterval = pollInterval || 1000;
-	var keepPoints = (keepHistorySec || 120) / (pollInterval / 1000);
+	var keepPoints = (keepHistorySec || 600) / (pollInterval / 1000);
 
 	setInterval(function() {
 		that.pollAndUpdateCharts();
@@ -60,11 +65,11 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	function updateCharts(responses) {
 		var curChart = 0;
 		$.each(responses, function() {
-			var series = charts[curChart++].series;
 			var point = {
 				x: this.timestamp * 1000,
 				y: parseInt(this.value)
 			};
+			var series = charts[curChart++].series;
 			series.addPoint(point, true, series.data.length >= keepPoints);
 		});
 	}
