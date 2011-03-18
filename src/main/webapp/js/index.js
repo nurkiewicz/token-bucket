@@ -1,12 +1,10 @@
 $(document).ready(function() {
 	var factory = new JmxChartsFactory();
-	factory.create([
-		{
+	factory.create([ {
 			name: 'java.lang:type=Memory',
 			attribute: 'HeapMemoryUsage',
 			path: 'committed'
-		},
-		{
+		}, {
 			name: 'java.lang:type=Memory',
 			attribute: 'HeapMemoryUsage',
 			path: 'used'
@@ -45,8 +43,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 
 	this.create = function(mbeans) {
 		mbeans = $.makeArray(mbeans);
-		var id = createPortlet();
-		series = series.concat(createChart(id, mbeans).series);
+		series = series.concat(createChart(mbeans).series);
 		monMbeans = monMbeans.concat(mbeans);
 	};
 
@@ -56,15 +53,13 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 		updateCharts(responses);
 	};
 
-	function createPortlet() {
-		var idx = series.length;
-		var id = 'portlet-' + idx;
-		$('#portlet-template')
+	function createNewPortlet(name) {
+		return $('#portlet-template')
 				.clone(true)
-				.find('.portlet-content').attr('id', id).end()
-				.appendTo($('.column')[idx % 3])
-				.removeAttr('id');
-		return id;
+				.appendTo($('.column')[series.length % 3])
+				.removeAttr('id')
+				.find('.title').text(name).end()
+				.find('.portlet-content')[0];
 	}
 
 	function setupPortletsContainer() {
@@ -102,14 +97,15 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 		});
 	}
 
-	function createChart(id, mbeans) {
+	function createChart(mbeans) {
 		return new Highcharts.Chart({
 			chart: {
-				renderTo: id,
+				renderTo: createNewPortlet(mbeans[0].name),
 				animation: false,
-				defaultSeriesType: 'spline'
+				defaultSeriesType: 'spline',
+				shadow: false
 			},
-			title: { text: mbeans[0].name },
+			title: { text: null },
 			xAxis: { type: 'datetime' },
 			yAxis: {
 				title: { text: mbeans[0].attribute }
