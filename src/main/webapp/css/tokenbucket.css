@@ -2,6 +2,11 @@
 	display: none;
 }
 
+.title {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
+}
+
 .chart {
 	width: 400px;
 	height: 270px;
