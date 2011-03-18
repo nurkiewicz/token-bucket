@@ -27,15 +27,18 @@ $(document).ready(function() {
 
 });
 
-function JmxChartsFactory(keepHistorySec, pollInterval) {
+function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 	var jolokia = new Jolokia("/jolokia");
 	var series = [];
-	var monMbeans = [];
+	var monitoredMbeans = [];
+	var chartsCount = 0;
 	var that = this;
 
-	setupPortletsContainer();
+	columnsCount = columnsCount || 3;
 	pollInterval = pollInterval || 1000;
 	var keepPoints = (keepHistorySec || 600) / (pollInterval / 1000);
+
+	setupPortletsContainer(columnsCount);
 
 	setInterval(function() {
 		that.pollAndUpdateCharts();
@@ -44,7 +47,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	this.create = function(mbeans) {
 		mbeans = $.makeArray(mbeans);
 		series = series.concat(createChart(mbeans).series);
-		monMbeans = monMbeans.concat(mbeans);
+		monitoredMbeans = monitoredMbeans.concat(mbeans);
 	};
 
 	this.pollAndUpdateCharts = function() {
@@ -56,13 +59,17 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	function createNewPortlet(name) {
 		return $('#portlet-template')
 				.clone(true)
-				.appendTo($('.column')[series.length % 3])
+				.appendTo($('.column')[chartsCount++ % columnsCount])
 				.removeAttr('id')
 				.find('.title').text(name).end()
 				.find('.portlet-content')[0];
 	}
 
 	function setupPortletsContainer() {
+		var column = $('.column');
+		for(var i = 1; i < columnsCount; ++i){
+			column.clone().appendTo(column.parent());
+		}
 		$(".column").sortable({
 			connectWith: ".column"
 		});
@@ -75,7 +82,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval) {
 	}
 
 	function prepareBatchRequest() {
-		return $.map(monMbeans, function(mbean) {
+		return $.map(monitoredMbeans, function(mbean) {
 			return {
 				type: "read",
 				mbean: mbean.name,

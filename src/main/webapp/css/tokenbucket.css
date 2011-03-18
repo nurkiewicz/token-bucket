@@ -40,7 +40,7 @@
 }
 
 .ui-sortable-placeholder {
-	border: 1px dotted black;
+	border: 1px dotted lightgray;
 	visibility: visible !important;
 	height: 10px !important;
 }
