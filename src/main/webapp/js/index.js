@@ -1,10 +1,12 @@
 $(document).ready(function() {
 	var factory = new JmxChartsFactory();
-	factory.create([ {
+	factory.create([
+		{
 			name: 'java.lang:type=Memory',
 			attribute: 'HeapMemoryUsage',
 			path: 'committed'
-		}, {
+		},
+		{
 			name: 'java.lang:type=Memory',
 			attribute: 'HeapMemoryUsage',
 			path: 'used'
@@ -22,9 +24,16 @@ $(document).ready(function() {
 		name: 'Catalina:name=executor,type=Executor',
 		attribute: 'queueSize'
 	});
-	factory.pollAndUpdateCharts();
-
-
+	factory.create([
+		{
+			name: 'com.blogspot.nurkiewicz.download:name=downloadServletHandler,type=DownloadServletHandler',
+			attribute: 'AwaitingChunks'
+		},
+		{
+			name: 'com.blogspot.nurkiewicz.download.tokenbucket:name=perRequestTokenBucket,type=PerRequestTokenBucket',
+			attribute: 'OngoingRequests'
+		}
+	]);
 });
 
 function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
@@ -41,7 +50,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 	setupPortletsContainer(columnsCount);
 
 	setInterval(function() {
-		that.pollAndUpdateCharts();
+		pollAndUpdateCharts();
 	}, pollInterval);
 
 	this.create = function(mbeans) {
@@ -50,11 +59,11 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 		monitoredMbeans = monitoredMbeans.concat(mbeans);
 	};
 
-	this.pollAndUpdateCharts = function() {
+	function pollAndUpdateCharts() {
 		var requests = prepareBatchRequest();
 		var responses = jolokia.request(requests);
 		updateCharts(responses);
-	};
+	}
 
 	function createNewPortlet(name) {
 		return $('#portlet-template')
