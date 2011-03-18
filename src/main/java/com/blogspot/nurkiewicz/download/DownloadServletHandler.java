@@ -11,6 +11,8 @@ import org.springframework.web.HttpRequestHandler;
 
 import javax.annotation.Resource;
 import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,6 +22,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_HOUR;
 
 /**
  * @author Tomasz Nurkiewicz
@@ -49,10 +53,13 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
 		response.setContentLength((int) file.length());
 		final AsyncContext asyncContext = request.startAsync(request, response);
-		downloadWorkersPool.submit(new DownloadChunkTask(asyncContext, input, curRequestNo));
+		asyncContext.setTimeout(MILLIS_PER_HOUR);
+		final DownloadChunkTask task = new DownloadChunkTask(asyncContext, input, curRequestNo);
+		asyncContext.addListener(task);
+		downloadWorkersPool.submit(task);
 	}
 
-	private class DownloadChunkTask implements Callable<Void> {
+	private class DownloadChunkTask implements Callable<Void>, AsyncListener {
 
 		private final BufferedInputStream fileInputStream;
 		private final byte[] buffer = new byte[TokenBucket.TOKEN_PERMIT_SIZE];
@@ -92,10 +99,30 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		}
 
 		private void done() throws IOException {
+			ctx.complete();
+		}
+
+		@Override
+		public void onComplete(AsyncEvent asyncEvent) throws IOException {
 			fileInputStream.close();
 			tokenBucket.completed(ctx.getRequest());
-			ctx.complete();
 			log.debug("Done: ({})", requestNo);
+		}
+
+		@Override
+		public void onTimeout(AsyncEvent asyncEvent) throws IOException {
+			log.warn("Asynchronous request timeout ({})", requestNo);
+			onComplete(asyncEvent);
+		}
+
+		@Override
+		public void onError(AsyncEvent asyncEvent) throws IOException {
+			log.warn("Asynchronous request error (" + requestNo + ")", asyncEvent.getThrowable());
+			onComplete(asyncEvent);
+		}
+
+		@Override
+		public void onStartAsync(AsyncEvent asyncEvent) throws IOException {
 		}
 	}
 
