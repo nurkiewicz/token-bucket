@@ -12,26 +12,34 @@ $(document).ready(function() {
 			path: 'used'
 		}
 	]);
+	factory.create([
+		{
+			name: 'java.lang:type=OperatingSystem',
+			attribute: 'SystemLoadAverage'
+		}
+	]);
 	factory.create({
 		name:     'java.lang:type=Threading',
 		attribute: 'ThreadCount'
 	});
-	factory.create({
-		name: 'Catalina:name="http-bio-8080",type=ThreadPool',
-		attribute: 'currentThreadsBusy'
-	});
-	factory.create({
-		name: 'Catalina:name=executor,type=Executor',
-		attribute: 'queueSize'
-	});
 	factory.create([
 		{
-			name: 'com.blogspot.nurkiewicz.download:name=downloadServletHandler,type=DownloadServletHandler',
-			attribute: 'AwaitingChunks'
+			name: 'Catalina:name="http-bio-8080",type=ThreadPool',
+			attribute: 'currentThreadsBusy'
 		},
+		{
+			name: 'Catalina:name=executor,type=Executor',
+			attribute: 'queueSize'
+		}
+	]);
+	factory.create([
 		{
 			name: 'com.blogspot.nurkiewicz.download.tokenbucket:name=perRequestTokenBucket,type=PerRequestTokenBucket',
 			attribute: 'OngoingRequests'
+		},
+		{
+			name: 'com.blogspot.nurkiewicz.download:name=downloadServletHandler,type=DownloadServletHandler',
+			attribute: 'AwaitingChunks'
 		}
 	]);
 });
@@ -41,7 +49,6 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 	var series = [];
 	var monitoredMbeans = [];
 	var chartsCount = 0;
-	var that = this;
 
 	columnsCount = columnsCount || 3;
 	pollInterval = pollInterval || 1000;
@@ -106,7 +113,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 		$.each(responses, function() {
 			var point = {
 				x: this.timestamp * 1000,
-				y: parseInt(this.value)
+				y: parseFloat(this.value)
 			};
 			var curSeries = series[curChart++];
 			curSeries.addPoint(point, true, curSeries.data.length >= keepPoints);
@@ -118,7 +125,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 			chart: {
 				renderTo: createNewPortlet(mbeans[0].name),
 				animation: false,
-				defaultSeriesType: 'spline',
+				defaultSeriesType: 'area',
 				shadow: false
 			},
 			title: { text: null },
@@ -133,14 +140,14 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 			credits: {enabled: false},
 			exporting: { enabled: false },
 			plotOptions: {
-				spline: {
-					lineWidth: 1,
-					marker: { enabled: false }
+				area: {
+					marker: {
+						enabled: false
+					}
 				}
 			},
 			series: $.map(mbeans, function(mbean) {
 				return {
-					type: 'spline',
 					data: [],
 					name: mbean.path || mbean.attribute
 				}
