@@ -82,7 +82,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 					downloadWorkersPool.submit(this);
 			} catch (Exception e) {
 				log.error("Error while sending data chunk, aborting ("  + requestNo + ")", e);
-				done();
+				ctx.complete();
 			}
 			return null;
 		}
@@ -92,14 +92,10 @@ public class DownloadServletHandler implements HttpRequestHandler {
 			final int bytesCount = fileInputStream.read(buffer);
 			ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
 			if (bytesCount < buffer.length) {
-				done();
+				ctx.complete();
 			} else {
 				downloadWorkersPool.submit(this);
 			}
-		}
-
-		private void done() throws IOException {
-			ctx.complete();
 		}
 
 		@Override
