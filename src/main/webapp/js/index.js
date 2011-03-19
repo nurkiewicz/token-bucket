@@ -70,7 +70,7 @@ function JmxChartsFactory(keepHistorySec, pollInterval, columnsCount) {
 				.clone(true)
 				.appendTo($('.column')[chartsCount++ % columnsCount])
 				.removeAttr('id')
-				.find('.title').text(name).end()
+				.find('.title').text((name.length > 50? '...' : '') + name.substring(name.length - 50, name.length)).end()
 				.find('.portlet-content')[0];
 	}
 
