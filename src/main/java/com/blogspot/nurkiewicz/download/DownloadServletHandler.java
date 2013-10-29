@@ -90,7 +90,9 @@ public class DownloadServletHandler implements HttpRequestHandler {
 		private void sendChunkWorthOneToken() throws IOException {
 			log.trace("Sending chunk {} of request ({})", chunkNo++, requestNo);
 			final int bytesCount = fileInputStream.read(buffer);
-			ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
+            if (bytesCount > 0){
+                ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
+            }
 			if (bytesCount < buffer.length) {
 				ctx.complete();
 			} else {
