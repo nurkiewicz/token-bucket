@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_HOUR;
 
@@ -37,10 +36,12 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadServletHandler.class);
     private static final int CHUNK_SIZE = 1024*10;
-    private static final double RATE_PER_REQUEST = 1024;  // in kilobytes/s
+    private static final double RATE_PER_REQUEST = 10 * 1024;  // in kilobytes/s
 
-       @Resource
+    @Resource
     private ThreadPoolTaskExecutor downloadWorkersPool;
+
+    private final RateLimiter rateLimiter = RateLimiter.create(RATE_PER_REQUEST);
 
     @Override
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -53,29 +54,29 @@ public class DownloadServletHandler implements HttpRequestHandler {
         final DownloadChunkTask task = new DownloadChunkTask(asyncContext, input);
         asyncContext.addListener(task);
         downloadWorkersPool.submit(task);
+
     }
 
     private class DownloadChunkTask implements Callable<Void>, AsyncListener {
 
         private final BufferedInputStream fileInputStream;
-        private final byte[] buffer = new byte[CHUNK_SIZE];
         private final AsyncContext ctx;
-        private final RateLimiter rateLimiter;
         int chunkNo;
 
         public DownloadChunkTask(AsyncContext ctx, BufferedInputStream fileInputStream) throws IOException {
             this.ctx = ctx;
             this.fileInputStream = fileInputStream;
-            this.rateLimiter = RateLimiter.create(RATE_PER_REQUEST);
         }
 
         @Override
         public Void call() throws Exception {
+
             try {
-                if (rateLimiter.tryAcquire(CHUNK_SIZE / 1024)) {
+                 if (rateLimiter.tryAcquire(CHUNK_SIZE / 1024)) {
                     sendChunk();
-                } else
+                } else{
                     downloadWorkersPool.submit(this);
+                }
             } catch (Exception e) {
                 log.error("Error while sending data chunk, aborting", e);
                 ctx.complete();
@@ -85,6 +86,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
         private void sendChunk() throws IOException {
             log.trace("Sending chunk {} ", chunkNo++);
+            final byte[] buffer = new byte[CHUNK_SIZE];
             final int bytesCount = fileInputStream.read(buffer);
             if (bytesCount > 0){
                 ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
