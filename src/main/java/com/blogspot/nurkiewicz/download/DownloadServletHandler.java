@@ -72,11 +72,8 @@ public class DownloadServletHandler implements HttpRequestHandler {
         public Void call() throws Exception {
 
             try {
-                 if (rateLimiter.tryAcquire(CHUNK_SIZE / 1024)) {
-                    sendChunk();
-                } else{
-                    downloadWorkersPool.submit(this);
-                }
+                rateLimiter.acquire(CHUNK_SIZE / 1024);
+                sendChunk();
             } catch (Exception e) {
                 log.error("Error while sending data chunk, aborting", e);
                 ctx.complete();
