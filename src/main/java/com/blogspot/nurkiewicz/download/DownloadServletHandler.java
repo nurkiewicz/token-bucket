@@ -36,12 +36,12 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadServletHandler.class);
     private static final int CHUNK_SIZE = 1024*10;
-    private static final double RATE_PER_REQUEST = 10 * 1024;  // in kilobytes/s
+    private static final double GLOBAL_RATE = 10 * 1024;  // in kilobytes/s
 
     @Resource
     private ThreadPoolTaskExecutor downloadWorkersPool;
 
-    private final RateLimiter rateLimiter = RateLimiter.create(RATE_PER_REQUEST);
+    private final RateLimiter rateLimiter = RateLimiter.create(GLOBAL_RATE);
 
     @Override
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
