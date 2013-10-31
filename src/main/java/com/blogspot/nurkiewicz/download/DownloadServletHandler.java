@@ -61,6 +61,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
         private final BufferedInputStream fileInputStream;
         private final AsyncContext ctx;
+        private final byte[] buffer = new byte[CHUNK_SIZE];
         int chunkNo;
 
         public DownloadChunkTask(AsyncContext ctx, BufferedInputStream fileInputStream) throws IOException {
@@ -83,7 +84,6 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
         private void sendChunk() throws IOException {
             log.trace("Sending chunk {} ", chunkNo++);
-            final byte[] buffer = new byte[CHUNK_SIZE];
             final int bytesCount = fileInputStream.read(buffer);
             if (bytesCount > 0){
                 ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
