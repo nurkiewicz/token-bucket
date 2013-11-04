@@ -85,13 +85,12 @@ public class DownloadServletHandler implements HttpRequestHandler {
         private void sendChunk() throws IOException {
             log.trace("Sending chunk {} ", chunkNo++);
             final int bytesCount = fileInputStream.read(buffer);
-            if (bytesCount > 0){
-                ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
-            }
-            if (bytesCount < buffer.length) {
+            if (bytesCount == -1){
                 ctx.complete();
-            } else {
+            } else{
+                ctx.getResponse().getOutputStream().write(buffer, 0, bytesCount);
                 downloadWorkersPool.submit(this);
+
             }
         }
 
