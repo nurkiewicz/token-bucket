@@ -46,7 +46,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
     @Override
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        final File file = new File("\\\\20ex15308\\share\\fakeimage.jpg");
+        final File file = new File("/home/dev/tmp/ehcache-1.6.2.jar");
         final InputStream input = new FileInputStream(file);
         response.setContentLength((int) file.length());
         final AsyncContext asyncContext = request.startAsync(request, response);
