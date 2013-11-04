@@ -16,10 +16,10 @@ import javax.servlet.AsyncListener;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.Callable;
 
 import static org.apache.commons.lang.time.DateUtils.MILLIS_PER_HOUR;
@@ -47,7 +47,7 @@ public class DownloadServletHandler implements HttpRequestHandler {
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         final File file = new File("\\\\20ex15308\\share\\fakeimage.jpg");
-        final BufferedInputStream input = new BufferedInputStream(new FileInputStream(file));
+        final InputStream input = new FileInputStream(file);
         response.setContentLength((int) file.length());
         final AsyncContext asyncContext = request.startAsync(request, response);
         asyncContext.setTimeout(MILLIS_PER_HOUR);
@@ -59,12 +59,12 @@ public class DownloadServletHandler implements HttpRequestHandler {
 
     private class DownloadChunkTask implements Callable<Void>, AsyncListener {
 
-        private final BufferedInputStream fileInputStream;
+        private final InputStream fileInputStream;
         private final AsyncContext ctx;
         private final byte[] buffer = new byte[CHUNK_SIZE];
         int chunkNo;
 
-        public DownloadChunkTask(AsyncContext ctx, BufferedInputStream fileInputStream) throws IOException {
+        public DownloadChunkTask(AsyncContext ctx, InputStream fileInputStream) throws IOException {
             this.ctx = ctx;
             this.fileInputStream = fileInputStream;
         }
