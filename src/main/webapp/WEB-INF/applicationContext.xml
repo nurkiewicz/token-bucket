@@ -6,11 +6,10 @@
 		   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 		   http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task-3.0.xsd">
 
-	<context:component-scan base-package="com.blogspot.nurkiewicz.download" />
-	<context:mbean-export/>
+    <context:component-scan base-package="com.blogspot.nurkiewicz.download" />
+    <context:mbean-export/>
 
-	<task:annotation-driven scheduler="bucketFillWorker"/>
-	<task:scheduler id="bucketFillWorker" pool-size="1"/>
-	<task:executor id="downloadWorkersPool" pool-size="1"/>
+    <task:executor id="downloadWorkersPool" pool-size="1" queue-capacity="1000"/>
+
 
 </beans>
